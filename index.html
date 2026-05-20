@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Приоритизация объектов МЗ МО</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Приоритизация объектов здравоохранения МЗ МО v2.1</h1>
+      <p>GitHub Pages + ручное обновление базы: JSON-реестр, справочники, расчёт F1–F6, массовое дозаполнение, дашборды и контроль качества данных.</p>
+    </div>
+    <div class="top-actions">
+      <button id="btnReloadBase" class="ghost">Восстановить базу</button>
+      <button id="btnExportJson" class="secondary">Экспорт JSON</button>
+      <button id="btnExportCsv" class="secondary">Экспорт CSV</button>
+      <label class="fileBtn">Импорт JSON<input id="jsonImport" type="file" accept=".json" hidden></label>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <section class="panel">
+        <h2>Выбор и фильтры</h2>
+        <label>Быстрый выбор объекта</label>
+        <select id="objectSelect"></select>
+        <label>Поиск по ID / ЛПУ / объекту / адресу</label>
+        <input id="searchInput" type="search" placeholder="Например: Балашиха, поликлиника, AUTO-0100" />
+        <div class="twoCols">
+          <div><label>Зона</label><select id="zoneFilter"><option value="">Все</option></select></div>
+          <div><label>Тип</label><select id="typeFilter"><option value="">Все</option></select></div>
+        </div>
+        <div class="twoCols">
+          <div><label>Статус данных</label><select id="qualityFilter"><option value="">Все</option><option value="bad">Требуют данных</option><option value="ok">Достаточные</option></select></div>
+          <div><label>Строк на странице</label><select id="pageSize"><option>50</option><option selected>100</option><option>250</option><option>500</option></select></div>
+        </div>
+        <label class="check"><input id="fullMode" type="checkbox"> Показать все 78 колонок</label>
+        <button id="btnApplyFilters" class="primary full">Применить фильтры</button>
+      </section>
+
+
+      <section class="panel">
+        <h2>Массовое дозаполнение</h2>
+        <p class="hint">Применяет выбранное значение ко всем объектам, которые сейчас попали в фильтр таблицы.</p>
+        <label>Поле для массового заполнения</label>
+        <select id="bulkField"></select>
+        <label>Значение</label>
+        <select id="bulkSelectValue"></select>
+        <input id="bulkTextValue" type="text" placeholder="Введите значение" style="display:none" />
+        <div class="twoCols">
+          <button id="btnBulkPreview" class="ghost" type="button">Проверить охват</button>
+          <button id="btnBulkApply" class="primary" type="button">Применить к фильтру</button>
+        </div>
+        <button id="btnBulkClear" class="ghost full" type="button">Очистить выбранное поле в фильтре</button>
+        <div id="bulkStatus" class="bulkStatus">Охват: не рассчитан.</div>
+        <p class="hint">Перед применением сузьте таблицу поиском, зоной, типом или статусом данных.</p>
+      </section>
+
+      <section class="panel stickyHelp">
+        <h2>Правила работы</h2>
+        <p>Незаполненные экспертные показатели не выдумываются. Они показываются как «Нет данных» и снижают достоверность расчёта.</p>
+        <p>Для ручного обновления базы: отредактируйте данные, экспортируйте JSON, замените файл <code>data/objects.json</code> в репозитории и сделайте commit.</p>
+      </section>
+    </aside>
+
+    <section class="workspace">
+      <section class="dashboard" id="dashboard"></section>
+
+      <section class="panel">
+        <div class="sectionHead">
+          <h2>Карточка объекта</h2>
+          <div>
+            <button id="btnSaveObject" class="primary">Сохранить изменения</button>
+            <button id="btnPrint" class="ghost">Печать / PDF</button>
+          </div>
+        </div>
+        <div id="calcSummary" class="calcSummary"></div>
+        <form id="objectForm" class="objectForm"></form>
+      </section>
+
+      <section class="panel">
+        <div class="sectionHead">
+          <h2>Рассчитанная таблица объектов</h2>
+          <div class="pager"><button id="prevPage" class="ghost">←</button><span id="pageInfo"></span><button id="nextPage" class="ghost">→</button></div>
+        </div>
+        <div class="tableWrap"><table id="registryTable"></table></div>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
