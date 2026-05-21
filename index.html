@@ -3,89 +3,209 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Приоритизация объектов МЗ МО</title>
+  <title>Приоритизация объектов МЗ МО v2.3</title>
   <link rel="stylesheet" href="styles/main.css" />
 </head>
 <body>
   <header class="topbar">
     <div>
-      <h1>Приоритизация объектов здравоохранения МЗ МО v2.1</h1>
-      <p>GitHub Pages + ручное обновление базы: JSON-реестр, справочники, расчёт F1–F6, массовое дозаполнение, дашборды и контроль качества данных.</p>
+      <h1>Приоритизация объектов МЗ МО v2.3</h1>
+      <p>Рабочая модель: решение по объекту, объяснение рейтинга, контроль ошибок, мастер дозаполнения, сценарии весов, дашборды и экспорт.</p>
     </div>
     <div class="top-actions">
-      <button id="btnReloadBase" class="ghost">Восстановить базу</button>
-      <button id="btnExportJson" class="secondary">Экспорт JSON</button>
-      <button id="btnExportCsv" class="secondary">Экспорт CSV</button>
+      <button id="btnExportXls" class="secondary">Excel</button>
+      <button id="btnExportCsv" class="secondary">CSV</button>
+      <button id="btnExportJson" class="secondary">JSON</button>
+      <button id="btnPrintCard" class="secondary">PDF карточка</button>
       <label class="fileBtn">Импорт JSON<input id="jsonImport" type="file" accept=".json" hidden></label>
     </div>
   </header>
 
-  <main class="layout">
-    <aside class="sidebar">
-      <section class="panel">
-        <h2>Выбор и фильтры</h2>
-        <label>Быстрый выбор объекта</label>
+  <main class="shell">
+    <section class="filters panel">
+      <div class="filterBlock wide">
+        <label>Выбор объекта</label>
         <select id="objectSelect"></select>
-        <label>Поиск по ID / ЛПУ / объекту / адресу</label>
-        <input id="searchInput" type="search" placeholder="Например: Балашиха, поликлиника, AUTO-0100" />
-        <div class="twoCols">
-          <div><label>Зона</label><select id="zoneFilter"><option value="">Все</option></select></div>
-          <div><label>Тип</label><select id="typeFilter"><option value="">Все</option></select></div>
+      </div>
+      <div class="filterBlock wide">
+        <label>Поиск</label>
+        <input id="searchInput" type="search" placeholder="ЛПУ, объект, адрес, ID" />
+      </div>
+      <div class="filterBlock">
+        <label>Зона</label>
+        <select id="zoneFilter"><option value="">Все</option></select>
+      </div>
+      <div class="filterBlock">
+        <label>Тип</label>
+        <select id="typeFilter"><option value="">Все</option></select>
+      </div>
+      <div class="filterBlock">
+        <label>Качество</label>
+        <select id="qualityFilter">
+          <option value="">Все</option>
+          <option value="bad">Нужно дозаполнить</option>
+          <option value="errors">Есть ошибки логики</option>
+          <option value="critical">Критический риск</option>
+          <option value="ok">Достаточные данные</option>
+        </select>
+      </div>
+      <div class="filterBlock">
+        <label>Сценарий</label>
+        <select id="scenarioSelect"></select>
+      </div>
+      <div class="filterBlock actionsInline">
+        <button id="btnApplyFilters" class="primary">Обновить</button>
+        <button id="btnReloadBase" class="ghost">Сброс</button>
+      </div>
+    </section>
+
+    <section class="tabs">
+      <button data-tab="decision" class="tabBtn active">1. Решение</button>
+      <button data-tab="dashboard" class="tabBtn">2. Дашборд</button>
+      <button data-tab="registry" class="tabBtn">3. Реестр</button>
+      <button data-tab="fulltable" class="tabBtn">4. Полная таблица</button>
+      <button data-tab="card" class="tabBtn">5. Карточка</button>
+      <button data-tab="wizard" class="tabBtn">6. Мастер</button>
+      <button data-tab="bulk" class="tabBtn">7. Массово</button>
+      <button data-tab="methodology" class="tabBtn">8. Методика</button>
+    </section>
+
+    <section id="tab_decision" class="tabPane active">
+      <section class="decisionGrid">
+        <div class="panel decisionPanel">
+          <div class="sectionHead">
+            <div>
+              <h2>Управленческое решение по объекту</h2>
+              <p class="hint">Один экран для совещания: итог, причина рейтинга, препятствия к решению и что дозаполнить.</p>
+            </div>
+            <button id="btnSaveFromDecision" class="primary">Сохранить изменения</button>
+          </div>
+          <div id="decisionView"></div>
         </div>
-        <div class="twoCols">
-          <div><label>Статус данных</label><select id="qualityFilter"><option value="">Все</option><option value="bad">Требуют данных</option><option value="ok">Достаточные</option></select></div>
-          <div><label>Строк на странице</label><select id="pageSize"><option>50</option><option selected>100</option><option>250</option><option>500</option></select></div>
+        <div class="panel sidePanel">
+          <h2>Критичные проверки</h2>
+          <div id="errorView"></div>
         </div>
-        <label class="check"><input id="fullMode" type="checkbox"> Показать все 78 колонок</label>
-        <button id="btnApplyFilters" class="primary full">Применить фильтры</button>
       </section>
+    </section>
 
+    <section id="tab_dashboard" class="tabPane">
+      <div id="dashboard" class="dashboard"></div>
+    </section>
 
-      <section class="panel">
-        <h2>Массовое дозаполнение</h2>
-        <p class="hint">Применяет выбранное значение ко всем объектам, которые сейчас попали в фильтр таблицы.</p>
-        <label>Поле для массового заполнения</label>
-        <select id="bulkField"></select>
-        <label>Значение</label>
-        <select id="bulkSelectValue"></select>
-        <input id="bulkTextValue" type="text" placeholder="Введите значение" style="display:none" />
-        <div class="twoCols">
-          <button id="btnBulkPreview" class="ghost" type="button">Проверить охват</button>
-          <button id="btnBulkApply" class="primary" type="button">Применить к фильтру</button>
-        </div>
-        <button id="btnBulkClear" class="ghost full" type="button">Очистить выбранное поле в фильтре</button>
-        <div id="bulkStatus" class="bulkStatus">Охват: не рассчитан.</div>
-        <p class="hint">Перед применением сузьте таблицу поиском, зоной, типом или статусом данных.</p>
-      </section>
-
-      <section class="panel stickyHelp">
-        <h2>Правила работы</h2>
-        <p>Незаполненные экспертные показатели не выдумываются. Они показываются как «Нет данных» и снижают достоверность расчёта.</p>
-        <p>Для ручного обновления базы: отредактируйте данные, экспортируйте JSON, замените файл <code>data/objects.json</code> в репозитории и сделайте commit.</p>
-      </section>
-    </aside>
-
-    <section class="workspace">
-      <section class="dashboard" id="dashboard"></section>
-
+    <section id="tab_registry" class="tabPane">
       <section class="panel">
         <div class="sectionHead">
-          <h2>Карточка объекта</h2>
           <div>
-            <button id="btnSaveObject" class="primary">Сохранить изменения</button>
-            <button id="btnPrint" class="ghost">Печать / PDF</button>
+            <h2>Рассчитанный реестр</h2>
+            <p class="hint">На экране только управленчески значимые колонки. Полные 78 показателей остаются в базе, карточке и экспорте.</p>
+          </div>
+          <div class="pager">
+            <label>Строк</label>
+            <select id="pageSize"><option>50</option><option selected>100</option><option>250</option></select>
+            <button id="prevPage" class="ghost">←</button>
+            <span id="pageInfo"></span>
+            <button id="nextPage" class="ghost">→</button>
+          </div>
+        </div>
+        <div class="tableWrap"><table id="registryTable"></table></div>
+      </section>
+    </section>
+
+
+    <section id="tab_fulltable" class="tabPane">
+      <section class="panel">
+        <div class="sectionHead">
+          <div>
+            <h2>Полная таблица по всем объектам</h2>
+            <p class="hint">Все показатели исходной Excel-модели. Пустые ячейки подсвечены красным. Выпадающие поля редактируются прямо в таблице, рейтинг пересчитывается автоматически.</p>
+          </div>
+          <div class="pager">
+            <label>Строк</label>
+            <select id="fullPageSize"><option selected>25</option><option>50</option><option>100</option></select>
+            <label class="checkLabel"><input id="onlyEmptyRows" type="checkbox"> только с пробелами</label>
+            <button id="fullPrevPage" class="ghost">←</button>
+            <span id="fullPageInfo"></span>
+            <button id="fullNextPage" class="ghost">→</button>
+          </div>
+        </div>
+        <div class="fullTableToolbar">
+          <div class="hint">Подсказка: красный фон — нет данных; серый фон — расчётные/служебные поля; изменение значения сразу пересчитывает F1–F6, рейтинг, зону и дашборды.</div>
+          <button id="btnSaveFullTable" class="primary">Сохранить изменения локально</button>
+        </div>
+        <div class="tableWrap fullWrap"><table id="fullTable"></table></div>
+      </section>
+    </section>
+
+
+    <section id="tab_card" class="tabPane">
+      <section class="panel">
+        <div class="sectionHead">
+          <div>
+            <h2>Карточка объекта</h2>
+            <p class="hint">По умолчанию открыт краткий режим. Полные поля доступны через переключатель.</p>
+          </div>
+          <div class="viewSwitch">
+            <select id="cardMode">
+              <option value="brief">Кратко</option>
+              <option value="tech">Технические данные</option>
+              <option value="medical">Медицинская нагрузка</option>
+              <option value="legal">Надзорные риски</option>
+              <option value="all">Все поля</option>
+            </select>
+            <button id="btnSaveObject" class="primary">Сохранить</button>
           </div>
         </div>
         <div id="calcSummary" class="calcSummary"></div>
+        <div id="missingBox" class="missingBox"></div>
         <form id="objectForm" class="objectForm"></form>
       </section>
+    </section>
 
-      <section class="panel">
+    <section id="tab_wizard" class="tabPane">
+      <section class="panel wizardPanel">
         <div class="sectionHead">
-          <h2>Рассчитанная таблица объектов</h2>
-          <div class="pager"><button id="prevPage" class="ghost">←</button><span id="pageInfo"></span><button id="nextPage" class="ghost">→</button></div>
+          <div>
+            <h2>Мастер дозаполнения</h2>
+            <p class="hint">Пошаговый сценарий: паспорт → техническое состояние → доступность → медицинская роль → надзорные риски → итог.</p>
+          </div>
+          <div>
+            <button id="wizardPrev" class="ghost">← Назад</button>
+            <button id="wizardNext" class="primary">Далее →</button>
+          </div>
         </div>
-        <div class="tableWrap"><table id="registryTable"></table></div>
+        <div id="wizardView"></div>
+      </section>
+    </section>
+
+    <section id="tab_bulk" class="tabPane">
+      <section class="panel bulkPanel">
+        <h2>Массовое дозаполнение</h2>
+        <p class="hint">Работает по текущему фильтру. Сначала отфильтруйте нужные объекты, затем применяйте значение.</p>
+        <div class="bulkGrid">
+          <div>
+            <label>Поле</label>
+            <select id="bulkField"></select>
+          </div>
+          <div>
+            <label>Значение</label>
+            <select id="bulkSelectValue"></select>
+            <input id="bulkTextValue" type="text" placeholder="Введите значение" style="display:none" />
+          </div>
+          <div class="bulkActions">
+            <button id="btnBulkPreview" class="ghost" type="button">Проверить охват</button>
+            <button id="btnBulkApply" class="primary" type="button">Применить</button>
+            <button id="btnBulkClear" class="ghost" type="button">Очистить</button>
+          </div>
+        </div>
+        <div id="bulkStatus" class="bulkStatus">Охват: не рассчитан.</div>
+      </section>
+    </section>
+
+    <section id="tab_methodology" class="tabPane">
+      <section class="panel methodology">
+        <h2>Методика расчёта</h2>
+        <div id="methodologyView"></div>
       </section>
     </section>
   </main>
